@@ -3,8 +3,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.InputMismatchException;
 
-// Thread Class: Voting Process
+
 class VotingThread extends Thread {
     private String voterName;
     private String candidate;
@@ -26,12 +27,12 @@ class VotingThread extends Thread {
         if (!votedVoters.contains(voterName)) {
             System.out.println(voterName + " is casting vote...");
             try {
-                Thread.sleep(1000); // Simulate voting process
+                Thread.sleep(1000); 
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
             countVote(candidate);
-            votedVoters.add(voterName);  // Add voter to the set after voting
+            votedVoters.add(voterName);  
             System.out.println(voterName + " successfully voted for " + candidate);
         } else {
             System.out.println(voterName + " has already voted. You can only vote once.");
@@ -55,15 +56,27 @@ class VotingThread extends Thread {
     }
 
     public static boolean isValidVoterName(String name) {
-        return name.matches("[a-zA-Z]+"); // Only letters are allowed in the name
+        return name.matches("[a-zA-Z]+"); 
     }
 
     public static boolean isValidVoterId(String voterId) {
-        return voterId.matches("[0-9]+"); // Only digits are allowed in the voter ID
+        return voterId.matches("[0-9]+"); 
+    }
+
+    // Newly added method to check if a voter has already voted
+    public static boolean hasVoted(String voterName) {
+        return votedVoters.contains(voterName);
+    }
+    
+    // Newly added method to reset voting: clears vote counts and voter records
+    public static synchronized void resetVoting() {
+        voteCount.clear();
+        votedVoters.clear();
+        System.out.println("Voting has been reset.");
     }
 }
 
-// Thread Communication: Voting Notification
+
 class VotingNotification {
     private boolean votingOpen = false;
 
@@ -101,13 +114,23 @@ public class DigitalVotingSystem2 {
             System.out.println("2. Display Results");
             System.out.println("3. Start Voting");
             System.out.println("4. Stop Voting (Exit)");
+            System.out.println("5. Check Voting Status");
+            System.out.println("6. Reset Voting");
             System.out.print("Enter your choice: ");
-            int choice = scanner.nextInt();
-            scanner.nextLine(); // Consume newline
-
+            
+            int choice;
+            try {
+                choice = scanner.nextInt();
+                scanner.nextLine(); 
+            } catch (InputMismatchException e) {
+                System.out.println("Invalid input, please enter a valid number.");
+                scanner.nextLine(); // clear the invalid input
+                continue;
+            }
+            
             switch (choice) {
                 case 1:
-                    // Input: Voter Name
+                  
                     String voterName;
                     while (true) {
                         System.out.print("Enter your name: ");
@@ -119,7 +142,7 @@ public class DigitalVotingSystem2 {
                         }
                     }
 
-                    // Input: Voter ID
+                  
                     String voterId;
                     while (true) {
                         System.out.print("Enter your Voter ID (numeric only): ");
@@ -131,18 +154,17 @@ public class DigitalVotingSystem2 {
                         }
                     }
 
-                    // Ensure voting has started
                     if (!votingNotification.isVotingOpen()) {
                         System.out.println("Voting has not started yet. Please wait until it is open.");
                         break;
                     }
 
-                    // Input: Candidate
+                   
                     System.out.println("Available candidates: Hema, Arjun, Chandana, Gayathri");
                     System.out.print("Enter candidate name: ");
                     String candidate = scanner.nextLine();
 
-                    // Validate candidate
+                    
                     if (VotingThread.isValidCandidate(candidate)) {
                         VotingThread votingThread = new VotingThread(voterName, candidate);
                         votingThread.start();
@@ -175,11 +197,27 @@ public class DigitalVotingSystem2 {
                         try {
                             votingNotification.stopVoting();
                             System.out.println("Exiting the system. Thank you!");
-                            System.exit(0); // Exit the program when voting is stopped
+                            System.exit(0);
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
                     }).start();
+                    break;
+
+                case 5:
+                    // Newly added feature to check voting status of a voter
+                    System.out.print("Enter your name to check voting status: ");
+                    String nameToCheck = scanner.nextLine();
+                    if (VotingThread.hasVoted(nameToCheck)) {
+                        System.out.println(nameToCheck + " has already voted.");
+                    } else {
+                        System.out.println(nameToCheck + " has not voted yet.");
+                    }
+                    break;
+                    
+                case 6:
+                    // Newly added feature to reset the voting system
+                    VotingThread.resetVoting();
                     break;
 
                 default:
